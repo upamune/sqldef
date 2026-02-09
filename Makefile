@@ -27,7 +27,7 @@ endif
 all: build
 .PHONY: all
 
-build: build-mysqldef build-sqlite3def build-mssqldef build-psqldef
+build: build-mysqldef build-sqlite3def build-duckdbdef build-mssqldef build-psqldef
 .PHONY: build
 
 build-mysqldef:
@@ -39,6 +39,11 @@ build-sqlite3def:
 	mkdir -p $(BUILD_DIR)
 	cd cmd/sqlite3def && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GOFLAGS) -o ../../$(BUILD_DIR)/sqlite3def$(SUFFIX)
 .PHONY: build-sqlite3def
+
+build-duckdbdef:
+	mkdir -p $(BUILD_DIR)
+	cd cmd/duckdbdef && CGO_ENABLED=1 GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GOFLAGS) -o ../../$(BUILD_DIR)/duckdbdef$(SUFFIX)
+.PHONY: build-duckdbdef
 
 build-mssqldef:
 	mkdir -p $(BUILD_DIR)
@@ -52,8 +57,8 @@ build-psqldef:
 
 clean:
 	rm -rf build package coverage.out coverage.xml
-	rm -f cmd/mysqldef/mysqldef cmd/psqldef/psqldef cmd/sqlite3def/sqlite3def cmd/mssqldef/mssqldef
-	rm -f cmd/mysqldef/mysqldef.exe cmd/psqldef/psqldef.exe cmd/sqlite3def/sqlite3def.exe cmd/mssqldef/mssqldef.exe
+	rm -f cmd/mysqldef/mysqldef cmd/psqldef/psqldef cmd/sqlite3def/sqlite3def cmd/duckdbdef/duckdbdef cmd/mssqldef/mssqldef
+	rm -f cmd/mysqldef/mysqldef.exe cmd/psqldef/psqldef.exe cmd/sqlite3def/sqlite3def.exe cmd/duckdbdef/duckdbdef.exe cmd/mssqldef/mssqldef.exe
 .PHONY: clean
 
 update-deps:
@@ -66,6 +71,7 @@ package-zip: build
 	cd $(BUILD_DIR) && zip -9 ../../package/mssqldef_$(GOOS)_$(GOARCH).zip mssqldef$(SUFFIX)
 	cd $(BUILD_DIR) && zip -9 ../../package/mysqldef_$(GOOS)_$(GOARCH).zip mysqldef$(SUFFIX)
 	cd $(BUILD_DIR) && zip -9 ../../package/sqlite3def_$(GOOS)_$(GOARCH).zip sqlite3def$(SUFFIX)
+	cd $(BUILD_DIR) && zip -9 ../../package/duckdbdef_$(GOOS)_$(GOARCH).zip duckdbdef$(SUFFIX)
 	cd $(BUILD_DIR) && zip -9 ../../package/psqldef_$(GOOS)_$(GOARCH).zip psqldef$(SUFFIX)
 .PHONY: package-zip
 
@@ -74,6 +80,7 @@ package-tar.gz: build
 	cd $(BUILD_DIR) && GZIP=-9 tar zcf ../../package/mssqldef_$(GOOS)_$(GOARCH).tar.gz mssqldef$(SUFFIX)
 	cd $(BUILD_DIR) && GZIP=-9 tar zcf ../../package/mysqldef_$(GOOS)_$(GOARCH).tar.gz mysqldef$(SUFFIX)
 	cd $(BUILD_DIR) && GZIP=-9 tar zcf ../../package/sqlite3def_$(GOOS)_$(GOARCH).tar.gz sqlite3def$(SUFFIX)
+	cd $(BUILD_DIR) && GZIP=-9 tar zcf ../../package/duckdbdef_$(GOOS)_$(GOARCH).tar.gz duckdbdef$(SUFFIX)
 	cd $(BUILD_DIR) && GZIP=-9 tar zcf ../../package/psqldef_$(GOOS)_$(GOARCH).tar.gz psqldef$(SUFFIX)
 .PHONY: package-tar.gz
 
@@ -103,6 +110,10 @@ test-sqlite3def:
 	$(GOTEST) ./cmd/sqlite3def
 .PHONY: test-sqlite3def
 
+test-duckdbdef:
+	$(GOTEST) ./cmd/duckdbdef
+.PHONY: test-duckdbdef
+
 test-mssqldef:
 	$(GOTEST) ./cmd/mssqldef ./database/mssql
 .PHONY: test-mssqldef
@@ -115,6 +126,7 @@ test-example-offline:
 	./example/run-offline.sh psqldef
 	./example/run-offline.sh mysqldef
 	./example/run-offline.sh sqlite3def
+	./example/run-offline.sh duckdbdef
 	./example/run-offline.sh mssqldef
 .PHONY: test-example-offline
 
@@ -128,6 +140,7 @@ test-example:
 	./example/run.sh psqldef
 	./example/run.sh mysqldef
 	./example/run.sh sqlite3def
+	./example/run.sh duckdbdef
 	./example/run.sh mssqldef
 .PHONY: test-example
 

@@ -23,6 +23,7 @@ jobs:
       matrix:
         target:
           - sqlite3def
+          - duckdbdef
         include:
           # SQL Server https://mcr.microsoft.com/artifact/mar/mssql/server/about
           - target: mssqldef
@@ -308,7 +309,7 @@ jobs:
           set -x
           cd ./homebrew-sqldef
           VERSION=$(echo "$GITHUB_REF" | sed -e 's!refs/tags/!!')
-          sed -i -e "s/tag: '.*'/tag: '$VERSION'/" mysqldef.rb psqldef.rb mssqldef.rb sqlite3def.rb
+          sed -i -e "s/tag: '.*'/tag: '$VERSION'/" mysqldef.rb psqldef.rb mssqldef.rb sqlite3def.rb duckdbdef.rb
           git add .
           if ! git diff-index --quiet HEAD --; then
             git config --global user.email "k0kubun@github.com"

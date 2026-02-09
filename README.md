@@ -4,7 +4,7 @@
 
 With sqldef, you maintain a single SQL file with your complete schema. To modify your schema - add columns, change constraints, or create indexes - simply edit this file. sqldef compares desired against current schema and generates the appropriate DDLs, ensuring your database reaches the desired state from any starting point.
 
-Each database gets its own command (`mysqldef`, `psqldef`, `sqlite3def`, `mssqldef`) that mimics the connection options of the native database client, making it familiar and easy to integrate into existing workflows. The tool comes as a single binary with no dependencies, and provides idempotent operations that are safe to run multiple times.
+Each database gets its own command (`mysqldef`, `psqldef`, `sqlite3def`, `duckdbdef`, `mssqldef`) that mimics the connection options of the native database client, making it familiar and easy to integrate into existing workflows. The tool comes as a single binary with no dependencies, and provides idempotent operations that are safe to run multiple times.
 
 This is inspired by [Ridgepole](https://github.com/ridgepole/ridgepole), which uses Ruby DSL. However, sqldef uses plain SQL, so all you need to remember is SQL.
 
@@ -15,6 +15,7 @@ This is inspired by [Ridgepole](https://github.com/ridgepole/ridgepole), which u
 - mysqldef - MySQL, MariaDB, and TiDB
 - psqldef - PostgreSQL
 - sqlite3def - SQLite3
+- duckdbdef - DuckDB
 - mssqldef - SQL Server
 
 See [CI workflow](.github/workflows/sqldef.yml) for tested versions.
@@ -30,6 +31,7 @@ This is the basic workflow, which is identical across all databases - only the c
 - `mysqldef` for MySQL
 - `psqldef` for PostgreSQL
 - `sqlite3def` for SQLite
+- `duckdbdef` for DuckDB
 - `mssqldef` for SQL Server
 
 #### 1. Export Current Schema
@@ -121,6 +123,7 @@ Also `@renamed` works for columns, indexes, and ENUM values. See command documen
 * [mysqldef](./cmd-mysqldef.md)
 * [psqldef](./cmd-psqldef.md)
 * [sqlite3def](./cmd-sqlite3def.md)
+* [duckdbdef](./cmd-duckdbdef.md)
 * [mssqldef](./cmd-mssqldef.md)
 
 ## Examples
@@ -132,12 +135,14 @@ See practical examples in the [example](./example) directory:
 ./example/run.sh psqldef      # PostgreSQL
 ./example/run.sh mysqldef     # MySQL/MariaDB
 ./example/run.sh sqlite3def   # SQLite3
+./example/run.sh duckdbdef    # DuckDB
 ./example/run.sh mssqldef     # SQL Server
 
 # Offline mode - compare schema files without database connection
 ./example/run-offline.sh psqldef      # PostgreSQL
 ./example/run-offline.sh mysqldef     # MySQL/MariaDB
 ./example/run-offline.sh sqlite3def   # SQLite3
+./example/run-offline.sh duckdbdef    # DuckDB
 ./example/run-offline.sh mssqldef     # SQL Server
 ```
 
@@ -172,6 +177,10 @@ wget -O - https://github.com/sqldef/sqldef/releases/latest/download/psqldef_linu
 wget -O - https://github.com/sqldef/sqldef/releases/latest/download/sqlite3def_linux_amd64.tar.gz \
   | tar xvz
 
+# duckdbdef
+wget -O - https://github.com/sqldef/sqldef/releases/latest/download/duckdbdef_linux_amd64.tar.gz \
+  | tar xvz
+
 # mssqldef
 wget -O - https://github.com/sqldef/sqldef/releases/latest/download/mssqldef_linux_amd64.tar.gz \
   | tar xvz
@@ -190,6 +199,9 @@ brew install sqldef/sqldef/psqldef
 
 # sqlite3def
 brew install sqldef/sqldef/sqlite3def
+
+# duckdbdef
+brew install sqldef/sqldef/duckdbdef
 
 # mssqldef
 brew install sqldef/sqldef/mssqldef
@@ -247,6 +259,7 @@ This runs `./example/run.sh` for all tools. You need to have the respective data
 - `./example/run.sh psqldef` - requires PostgreSQL
 - `./example/run.sh mysqldef` - requires MySQL/MariaDB
 - `./example/run.sh sqlite3def` - requires SQLite3 (no server needed)
+- `./example/run.sh duckdbdef` - requires DuckDB (no server needed)
 - `./example/run.sh mssqldef` - requires SQL Server
 
 Test all offline mode examples (no database required):
@@ -255,7 +268,7 @@ Test all offline mode examples (no database required):
 make test-example-offline
 ```
 
-This runs `./example/run-offline.sh` for all tools (psqldef, mysqldef, sqlite3def, mssqldef). These examples demonstrate offline mode (file-to-file comparison) without requiring database connections.
+This runs `./example/run-offline.sh` for all tools (psqldef, mysqldef, sqlite3def, duckdbdef, mssqldef). These examples demonstrate offline mode (file-to-file comparison) without requiring database connections.
 
 
 ## Contributing

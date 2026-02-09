@@ -1,0 +1,129 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"strings"
+
+	"github.com/jessevdk/go-flags"
+	"github.com/sqldef/sqldef/v3"
+	"github.com/sqldef/sqldef/v3/database"
+	"github.com/sqldef/sqldef/v3/database/duckdb"
+	"github.com/sqldef/sqldef/v3/database/file"
+	"github.com/sqldef/sqldef/v3/parser"
+	"github.com/sqldef/sqldef/v3/schema"
+	"github.com/sqldef/sqldef/v3/util"
+)
+
+// Return parsed options and schema filename
+// TODO: Support `sqldef schema.sql -opt val...`
+func parseOptions(args []string) (database.Config, *sqldef.Options) {
+	defaultConfig := database.GeneratorConfig{LegacyIgnoreQuotes: true}
+	configs := []database.GeneratorConfig{defaultConfig}
+
+	var opts struct {
+		File       []string `short:"f" long:"file" description:"Read desired SQL from the file, rather than stdin" value-name:"FILENAME" default:"-"`
+		DryRun     bool     `long:"dry-run" description:"Don't run DDLs but just show them"`
+		Apply      bool     `long:"apply" description:"Apply DDLs to the database (default, but will require this flag in future versions)"`
+		Export     bool     `long:"export" description:"Just dump the current schema to stdout"`
+		EnableDrop bool     `long:"enable-drop" description:"Enable destructive changes such as DROP for TABLE, SCHEMA, ROLE, USER, FUNCTION, PROCEDURE, TRIGGER, VIEW, INDEX, SEQUENCE, TYPE"`
+
+		Config       func(string) `long:"config" description:"YAML configuration file (can be specified multiple times)" value-name:"PATH"`
+		ConfigInline func(string) `long:"config-inline" description:"YAML configuration as inline string (can be specified multiple times)" value-name:"YAML"`
+
+		Help    bool `long:"help" description:"Show this help"`
+		Version bool `long:"version" description:"Show version information"`
+	}
+
+	opts.Config = func(path string) {
+		configs = append(configs, database.ParseGeneratorConfig(path, defaultConfig))
+	}
+	opts.ConfigInline = func(yaml string) {
+		configs = append(configs, database.ParseGeneratorConfigString(yaml, defaultConfig))
+	}
+
+	flagParser := flags.NewParser(&opts, flags.None)
+	flagParser.Usage = `[OPTION]... FILENAME --export
+  duckdbdef [OPTION]... FILENAME --apply < desired.sql
+  duckdbdef [OPTION]... FILENAME --dry-run < desired.sql
+  duckdbdef [OPTION]... current.sql < desired.sql`
+	args, err := flagParser.ParseArgs(args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if opts.Help {
+		flagParser.WriteHelp(os.Stdout)
+		fmt.Printf("\nFor more information, see: https://github.com/sqldef/sqldef/blob/v%s/cmd-duckdbdef.md\n", sqldef.GetVersion())
+		os.Exit(0)
+	}
+
+	if opts.Version {
+		fmt.Println(sqldef.GetFullVersion())
+		os.Exit(0)
+	}
+
+	desiredFiles := sqldef.ParseFiles(opts.File)
+
+	var desiredDDLs string
+	if !opts.Export {
+		desiredDDLs, err = sqldef.ReadFiles(desiredFiles)
+		if err != nil {
+			log.Fatalf("Failed to read '%v': %s", desiredFiles, err)
+		}
+	}
+
+	config := database.MergeGeneratorConfigs(configs)
+	if opts.EnableDrop {
+		config.EnableDrop = true
+	}
+
+	options := sqldef.Options{
+		DesiredDDLs: desiredDDLs,
+		DryRun:      opts.DryRun,
+		Export:      opts.Export,
+		Config:      config,
+	}
+
+	if len(args) == 0 {
+		fmt.Print("No database is specified!\n\n")
+		flagParser.WriteHelp(os.Stdout)
+		os.Exit(1)
+	} else if len(args) > 1 {
+		fmt.Printf("Multiple databases are given: %v\n\n", args)
+		flagParser.WriteHelp(os.Stdout)
+		os.Exit(1)
+	}
+
+	var databaseName string
+	if strings.HasSuffix(args[0], ".sql") {
+		options.CurrentFile = args[0]
+	} else {
+		databaseName = args[0]
+	}
+
+	dbConfig := database.Config{DbName: databaseName}
+	return dbConfig, &options
+}
+
+func main() {
+	util.InitSlog()
+
+	config, options := parseOptions(os.Args[1:])
+
+	var db database.Database
+	if len(options.CurrentFile) > 0 {
+		db = file.NewDatabase(options.CurrentFile)
+	} else {
+		var err error
+		db, err = duckdb.NewDatabase(config)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+	}
+
+	sqlParser := database.NewParser(parser.ParserModeSQLite3)
+	sqldef.Run(schema.GeneratorModeSQLite3, db, sqlParser, options)
+}

@@ -5,17 +5,17 @@ set -e
 TOOL=$1
 if [ -z "$TOOL" ]; then
     echo "Usage: $0 <tool>"
-    echo "  tool: psqldef, mysqldef, sqlite3def, mssqldef"
+    echo "  tool: psqldef, mysqldef, sqlite3def, duckdbdef, mssqldef"
     exit 1
 fi
 
 # Validate tool
 case "$TOOL" in
-    psqldef|mysqldef|sqlite3def|mssqldef)
+    psqldef|mysqldef|sqlite3def|duckdbdef|mssqldef)
         ;;
     *)
         echo "Error: Invalid tool '$TOOL'"
-        echo "Valid tools: psqldef, mysqldef, sqlite3def, mssqldef"
+        echo "Valid tools: psqldef, mysqldef, sqlite3def, duckdbdef, mssqldef"
         exit 1
         ;;
 esac
@@ -242,6 +242,52 @@ case "$TOOL" in
         # Export final schema
         echo -e "${GREEN}8. Final schema${NC}"
         echo -e "${YELLOW}Command: sqlite3def $DB --export${NC}"
+        echo ""
+        "$BINARY" "$DB" --export
+        echo ""
+
+        CLEANUP_CMD="rm $DB"
+        ;;
+
+    duckdbdef)
+        DB="$SCHEMA_DIR/example.duckdb"
+
+        echo -e "${GREEN}1. Creating new database...${NC}"
+        echo -e "${YELLOW}Command: rm -f $DB${NC}"
+        rm -f "$DB"
+        echo ""
+
+        echo -e "${GREEN}2. Creating initial schema...${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --apply < initial_schema.sql${NC}"
+        "$BINARY" "$DB" --apply < "$SCHEMA_DIR/initial_schema.sql"
+        echo ""
+
+        echo -e "${GREEN}3. Exporting current schema${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --export${NC}"
+        echo ""
+        "$BINARY" "$DB" --export
+        echo ""
+
+        echo -e "${GREEN}4. Preview changes (dry run)${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --dry-run < schema.sql${NC}"
+        echo ""
+        "$BINARY" "$DB" --dry-run < "$SCHEMA_DIR/schema.sql"
+        echo ""
+
+        echo -e "${GREEN}5. Applying schema changes${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --apply < schema.sql${NC}"
+        echo ""
+        "$BINARY" "$DB" --apply < "$SCHEMA_DIR/schema.sql"
+        echo ""
+
+        echo -e "${GREEN}6. Verifying idempotency (running again)${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --apply < schema.sql${NC}"
+        echo ""
+        "$BINARY" "$DB" --apply < "$SCHEMA_DIR/schema.sql"
+        echo ""
+
+        echo -e "${GREEN}7. Final schema${NC}"
+        echo -e "${YELLOW}Command: duckdbdef $DB --export${NC}"
         echo ""
         "$BINARY" "$DB" --export
         echo ""

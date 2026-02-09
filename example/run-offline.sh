@@ -5,17 +5,17 @@ set -e
 TOOL=$1
 if [ -z "$TOOL" ]; then
     echo "Usage: $0 <tool>"
-    echo "  tool: psqldef, mysqldef, sqlite3def, mssqldef"
+    echo "  tool: psqldef, mysqldef, sqlite3def, duckdbdef, mssqldef"
     exit 1
 fi
 
 # Validate tool
 case "$TOOL" in
-    psqldef|mysqldef|sqlite3def|mssqldef)
+    psqldef|mysqldef|sqlite3def|duckdbdef|mssqldef)
         ;;
     *)
         echo "Error: Invalid tool '$TOOL'"
-        echo "Valid tools: psqldef, mysqldef, sqlite3def, mssqldef"
+        echo "Valid tools: psqldef, mysqldef, sqlite3def, duckdbdef, mssqldef"
         exit 1
         ;;
 esac

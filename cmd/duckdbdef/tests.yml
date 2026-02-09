@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../testutil/testcase.schema.json
+
+CreateTable:
+  desired: |
+    CREATE TABLE users (
+      id integer NOT NULL,
+      name text,
+      age integer
+    );
+
+AddColumn:
+  current: |
+    CREATE TABLE users (
+      id integer NOT NULL,
+      name text
+    );
+  desired: |
+    CREATE TABLE users (
+      id integer NOT NULL,
+      name text,
+      age integer
+    );
+  up: |
+    ALTER TABLE "users" ADD COLUMN "age" integer;
+  down: |
+    ALTER TABLE "users" DROP COLUMN "age";
+
+DropTable:
+  current: |
+    CREATE TABLE users (
+      id integer NOT NULL,
+      name text,
+      age integer
+    );
+    CREATE TABLE bigdata (
+      data integer
+    );
+  desired: |
+    CREATE TABLE users (
+      id integer NOT NULL,
+      name text,
+      age integer
+    );
+  up: |
+    DROP TABLE "bigdata";
+  down: |
+    CREATE TABLE bigdata (
+      data integer
+    );
